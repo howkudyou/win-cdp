@@ -8,6 +8,7 @@ namespace WinCDP
 {
     class CDPPacket
     {
+        public CDPMessage[] data { get; private set; }
         public string devID { get; private set; }
         public string vtpDomain { get; private set; }
         public string portName { get; private set; }
@@ -21,7 +22,6 @@ namespace WinCDP
         public byte v { get; private set; }
         public byte ttl { get; private set; }
         public UInt16 checksum { get; private set; }
-        public CDPMessage[] data { get; private set; }
         public string addresses { get; private set; }
         public string voipVlanQuery { get; private set; }
         public string power { get; private set; }
@@ -40,6 +40,10 @@ namespace WinCDP
         public string sPOE { get; private set; }
         public List<String> func = new List<String>();
 
+        /// <summary>
+        /// Takes a Pcap CDP Packet and reads raw data
+        /// </summary>
+        /// <param name="packet">Pcap Packet</param>
         public CDPPacket(Packet packet)
         {
             CDPMessage[] msg = null;
@@ -64,6 +68,11 @@ namespace WinCDP
             return BitConverter.ToString(bytes).Replace("-", "");
         }
 
+        /// <summary>
+        /// Convert Hex to Ascii String
+        /// </summary>
+        /// <param name="hexString">String containing chars as hex</param>
+        /// <returns>String with Ascii chars</returns>
         private string HexString2Ascii(string hexString)
         {
             StringBuilder sb = new StringBuilder();
@@ -74,6 +83,9 @@ namespace WinCDP
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Parses the CDP Data and fills information into variables (Use this if you want to read Packet Data)
+        /// </summary>
         public void ParseCDP()
         {
             CDPMessage[] messages = data;
@@ -201,11 +213,25 @@ namespace WinCDP
             }
         }
 
+        /// <summary>
+        /// Compares two bytes
+        /// </summary>
+        /// <param name="a">byte a</param>
+        /// <param name="b">byte b</param>
+        /// <returns>True, if b is the same as a AND b</returns>
         private bool byteCmp(byte a, byte b)
         {
             return b == (a & b);
         }
 
+        /// <summary>
+        /// CDP Message to HexDump
+        /// </summary>
+        /// <param name="t">A String</param>
+        /// <param name="s">Message data</param>
+        /// <param name="size">Size of msg data</param>
+        /// <param name="bpl">Bytes per line</param>
+        /// <returns>HexDump as String</returns>
         private string hexDump(string t, byte[] s, int size, int bpl)
         {
             int l;
@@ -268,6 +294,13 @@ namespace WinCDP
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Decodes IP Address
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="data"></param>
+        /// <param name="size"></param>
+        /// <returns>Address as String</returns>
         private string decodeAddress(string s, byte[] data, int size)
         {
             StringBuilder sb = new StringBuilder();
@@ -329,6 +362,11 @@ namespace WinCDP
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Converts ByteArray to IPv6 String
+        /// </summary>
+        /// <param name="s">Input Bytes as Array</param>
+        /// <returns>IPv6 Address as String</returns>
         private string byte2IPV6(byte[] s)
         {
             IPAddress ipv6 = new IPAddress(s);
@@ -336,6 +374,11 @@ namespace WinCDP
             return ipv6.ToString();
         }
 
+        /// <summary>
+        /// Converts ByteArray to IPv4 String
+        /// </summary>
+        /// <param name="s">Input Bytes as Array</param>
+        /// <returns>IPv4 Address as String</returns>
         private string byte2IPV4(byte[] s)
         {
             IPAddress ipv4 = new IPAddress(s);
@@ -343,6 +386,13 @@ namespace WinCDP
             return ipv4.ToString();
         }
 
+        /// <summary>
+        /// Decodes Field data with corresponding Network Layer Protocol Identifier
+        /// </summary>
+        /// <param name="protocol">Network Layer Protocol Identifier in HEX</param>
+        /// <param name="address">Address</param>
+        /// <param name="address_length">Length of address Array</param>
+        /// <returns>Field data as String</returns>
         private string nlpid2String(UInt64 protocol, byte[] address, int address_length)
         {
             StringBuilder sb = new StringBuilder();
@@ -353,55 +403,55 @@ namespace WinCDP
             }
             switch (protocol)
             {
-                case 0x00: // NLPID_NULL
+                case 0x00:
                     sb.Append(hexDump("NULL : Length : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
-                case 0x08: // NLPID_Q933
+                case 0x08:
                     sb.Append(hexDump("Q933 : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
-                case 0x80: // NLPID_SNAP
+                case 0x80:
                     sb.Append(hexDump("SNAP : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
-                case 0x81: // NLPID_CLNP
+                case 0x81:
                     sb.Append(hexDump("CLPN : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
-                case 0x82: // NLPID_ESIS
+                case 0x82:
                     sb.Append(hexDump("ESIS : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
-                case 0x83: // NLPID_ISIS				
+                case 0x83:			
                     sb.Append(hexDump("ISIS : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
-                case 0x8E: // NLPID_IPV6
+                case 0x8E:
                     sb.Append(byte2IPV6(address));
                     sb.Append("\n");
                     break;
-                case 0xB0: // NLPID_FRF9
+                case 0xB0:
                     sb.Append(hexDump("FRF9 : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
-                case 0xB1: // NLPID_FRF12
+                case 0xB1:
                     sb.Append(hexDump("FRF12 : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
-                case 0xC0: // NLPID_TRILL
+                case 0xC0:
                     sb.Append(hexDump("Trill : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
-                case 0xC1: // NLPID_8021AQ			
+                case 0xC1:		
                     sb.Append(hexDump("8021AQ : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
-                case 0xCC: // NLPID_IPV4
+                case 0xCC:
                     sb.Append(byte2IPV4(address));
                     sb.Append("\n");
                     break;
-                case 0xCF: // NLPID_PPP			
+                case 0xCF:		
                     sb.Append(hexDump("PPP : ", address, address_length, wrap));
                     sb.Append("\n");
                     break;
@@ -420,6 +470,11 @@ namespace WinCDP
         public UInt16 Size { get; private set; }
         public Byte[] Data { get; private set; }
 
+        /// <summary>
+        /// Extracts raw data from Pcap Packet at specific pos
+        /// </summary>
+        /// <param name="pos">Current position in Packet</param>
+        /// <param name="packet">Pcap Packet</param>
         public CDPMessage(int pos, Packet packet)
         {
             Byte[] d = null;
